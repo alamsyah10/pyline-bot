@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Streaming and Image Capture</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Add Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+</head>
+<body class="container mt-4">
+
+<h1 class="mb-4">Video Streaming and Image Capture</h1>
+
+<div class="row">
+    <div class="col-md-8">
+        <video id="video" class="w-100" height="480" autoplay></video>
+        <canvas id="canvas" style="display: none;"></canvas>
+    </div>
+    <div class="col-md-4">
+        <!-- Image upload input -->
+        <div class="form-group">
+            <label for="imageUpload">Upload Image:</label>
+            <input type="file" class="form-control-file" id="imageUpload" accept="image/*">
+        </div>
+
+        <!-- Map container -->
+        <div id="map" style="height: 200px;"></div>
+
+        <!-- Display Latitude and Longitude -->
+        <div class="form-group">
+            <label for="latitude">Latitude:</label>
+            <input type="text" class="form-control" id="latitude" readonly>
+        </div>
+        <div class="form-group">
+            <label for="longitude">Longitude:</label>
+            <input type="text" class="form-control" id="longitude" readonly>
+        </div>
+
+        <button id="captureBtn" class="btn btn-primary mb-3">Capture Image</button>
+        <img id="capturedImage" class="img-fluid" alt="Captured Image">
+    </div>
+</div>
+
+<!-- Your existing scripts -->
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+<!-- Add Leaflet JavaScript -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+
+<script>
+    var map = L.map('map').setView([0, 0], 1);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    // Event listener for map click
+    map.on('click', function (e) {
+        updateCoordinates(e.latlng.lat, e.latlng.lng);
+    });
+
+    function updateCoordinates(latitude, longitude) {
+        document.getElementById('latitude').value = latitude;
+        document.getElementById('longitude').value = longitude;
+    }
+    // Your existing JavaScript code here
+    document.getElementById('imageUpload').addEventListener('change', handleImageUpload);
+
+    function handleImageUpload(event) {
+        const fileInput = event.target;
+        const file = fileInput.files[0];
+
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const imageData = e.target.result;
+                displayCapturedImage(imageData);
+                // You can add additional logic or send the imageData to the server
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function displayCapturedImage(imageData) {
+        const capturedImage = document.getElementById('capturedImage');
+        capturedImage.src = imageData;
+        console.log(imageData);
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const latitude = document.getElementById('latitude').value;
+                const longitude = document.getElementById('longitude').value;
+
+                fetch('/capture', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ image_data: imageData, latitude: latitude, longitude: longitude }),
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            console.log('Image captured and saved:', data.image_filename);
+                        } else {
+                            alert('Error capturing image: ' + data.error);
+                            console.error('Error capturing image:', data.error);
+                        }
+                    })
+                    .catch(error => {
+                        alert('Error capturing image: ' + error);
+                        console.error('Error capturing image:', error);
+                    });
+            },
+            (error) => {
+                alert('Error getting user location: ' + error);
+                console.error('Error getting user location:', error);
+            },
+            { enableHighAccuracy: true }
+        );
+    }
+
+
+</script>
+
+<!-- Bootstrap JS and Popper.js scripts -->
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+
+<script>
+    // Remaining JavaScript code
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const captureBtn = document.getElementById('captureBtn');
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then((stream) => {
+            video.srcObject = stream;
+        })
+        .catch((error) => {
+            console.error('Error accessing camera:', error);
+        });
+
+    captureBtn.addEventListener('click', captureImage);
+
+    function captureImage() {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const latitude = document.getElementById('latitude').value;
+                const longitude = document.getElementById('longitude').value;
+                const context = canvas.getContext('2d');
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const imageData = canvas.toDataURL('image/jpeg', 0.9);
+                console.log("image data");
+                console.log(imageData);
+                displayCapturedImage(imageData);
+        });
+    }
+</script>
+</body>
+</html>
