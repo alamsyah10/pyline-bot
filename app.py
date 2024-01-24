@@ -45,6 +45,26 @@ def callback():
 
     return 'OK'
 
+@app.route("/send_message", methods=['POST'])
+def send_message():
+    try:
+        user_id = request.json.get("user_id")  # Get user ID from the request
+        message_text = request.json.get("message_text")  # Get message text from the request
+
+        # Message to be sent
+        message = TextSendMessage(text=message_text)
+
+        # Send the message to the specified user
+        line_bot_api.push_message(user_id, messages=message)
+
+        return jsonify({"status": "success", "message": "Message sent successfully."})
+
+    except Exception as e:
+        print("Error:", str(e))
+        return jsonify({"status": "error", "error": str(e)})
+
+
+
 @app.route("/")
 def dashboard():
     return render_template("dashboard.html")
@@ -99,9 +119,12 @@ def capture_image():
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     """ Here's all the messages will be handled and processed by the program """
+    print(event.source.user_id)
     line_bot_api.reply_message(
         event.reply_token,
         TextSendMessage(text=event.message.text + " apa kabar"))
+
+
 
 
 if __name__ == "__main__":
