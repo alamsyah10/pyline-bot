@@ -41,7 +41,7 @@ def handle_message(event):
     """ Here's all the messages will be handled and processed by the program """
     line_bot_api.reply_message(
         event.reply_token,
-        TextSendMessage(text=event.message.text))
+        TextSendMessage(text=event.message.text + " apa kabar"))
 
 
 if __name__ == "__main__":
