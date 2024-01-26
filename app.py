@@ -16,7 +16,7 @@ from linebot.exceptions import (
     InvalidSignatureError
 )
 from linebot.models import (
-    MessageEvent, TextMessage, TextSendMessage,
+    MessageEvent, TextMessage, TextSendMessage, ImageMessage
 )
 
 app = Flask(__name__)
@@ -25,6 +25,10 @@ line_bot_api = LineBotApi('zo4LgOR9tL8K0cpYcp1nuvypmo1keq06lhSyIlwcRoNyVR+/2PJ56
 handler = WebhookHandler('230d32d01ad7ede981c9e0f462695941')
 captured_images_folder = os.path.join("static", "captured_images")
 database_images_folder = os.path.join("static", "database")
+
+database = [{
+    ""
+}]
 
 
 @app.route("/callback", methods=['POST'])
@@ -48,8 +52,9 @@ def callback():
 @app.route("/send_message", methods=['POST'])
 def send_message():
     try:
-        user_id = request.json.get("user_id")  # Get user ID from the request
-        message_text = request.json.get("message_text")  # Get message text from the request
+        # user_id = request.json.get("user_id")  # Get user ID from the request
+        user_id = "U027f30522e854eb3922ab0fd6fa857d3"
+        message_text = "send to alamsyahhh"  # Get message text from the request
 
         # Message to be sent
         message = TextSendMessage(text=message_text)
@@ -68,6 +73,31 @@ def send_message():
 @app.route("/")
 def dashboard():
     return render_template("dashboard.html")
+
+import requests
+import json
+
+def basic_upload(image_data):
+    url = "https://api.bytescale.com/v2/accounts/kW15btV/uploads/binary"
+    headers = {
+        "Authorization": "Bearer public_kW15btVG2Yc8588L6sRg4AERTU8J",
+        "Content-Type": "text/plain"  # Change to match the file's MIME type
+    }
+    data = image_data  # To upload a file: use --data-binary @file.jpg in cURL
+
+    response = requests.post(url, headers=headers, data=data)
+
+# Example usage:
+# params = {
+#     'accountId': 'your_account_id',
+#     'querystring': {'param1': 'value1', 'param2': 'value2'},
+#     'requestBody': 'your_request_body',
+#     'apiKey': 'your_api_key',
+#     'metadata': {'meta1': 'value1', 'meta2': 'value2'}
+# }
+# result = basic_upload(params)
+# print(result)
+
 
 @app.route("/capture", methods=['POST'])
 def capture_image():
@@ -99,6 +129,7 @@ def capture_image():
             print(f"1 face recognition time: {time.time() - one_response_start_time}")
             print(response)
             if (response['verified']) :
+
                 print(f"face recognition time : {time.time()-start_time}")
                 return jsonify({"status": "success", "image_filename": filename})
         print(f"face recognition time : {time.time()-start_time}")
@@ -120,9 +151,31 @@ def capture_image():
 def handle_message(event):
     """ Here's all the messages will be handled and processed by the program """
     print(event.source.user_id)
+    print()
     line_bot_api.reply_message(
         event.reply_token,
         TextSendMessage(text=event.message.text + " apa kabar"))
+
+@handler.add(MessageEvent, message=ImageMessage)
+def handle_image(event):
+    """ Handle image messages """
+    user_id = event.source.user_id
+    image_id = event.message.id
+
+    # You can save the image or perform further processing here
+    # Example: Save the image with user_id and image_id as the filename
+    image_path = os.path.join(captured_images_folder, f"{user_id}_{image_id}.jpg")
+    
+    # Retrieve the image content from Line server
+    message_content = line_bot_api.get_message_content(image_id)
+
+    with open(image_path, 'wb') as f:
+        for chunk in message_content.iter_content():
+            f.write(chunk)
+
+    # Respond to the user
+    response_message = f"Image received and saved as {image_path}"
+    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=response_message))
 
 
 
