@@ -168,6 +168,8 @@ def handle_image(event):
     
     # Retrieve the image content from Line server
     message_content = line_bot_api.get_message_content(image_id)
+    image_data = message_content.content
+    print(image_data)
 
     with open(image_path, 'wb') as f:
         for chunk in message_content.iter_content():
