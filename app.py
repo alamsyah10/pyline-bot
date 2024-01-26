@@ -76,17 +76,22 @@ def dashboard():
 
 import requests
 import json
-
 def basic_upload(image_data):
     url = "https://api.bytescale.com/v2/accounts/kW15btV/uploads/binary"
     headers = {
         "Authorization": "Bearer public_kW15btVG2Yc8588L6sRg4AERTU8J",
-        "Content-Type": "text/plain"  # Change to match the file's MIME type
+        "Content-Type": "image/jpeg"  # Update to match the file's MIME type
     }
-    data = image_data  # To upload a file: use --data-binary @file.jpg in cURL
 
-    response = requests.post(url, headers=headers, data=data)
+    response = requests.post(url, headers=headers, data=image_data)
 
+    # Check if the request was successful (status code 2xx)
+    if response.ok:
+        result = response.json()
+        print("Upload successful:", result)
+    else:
+        print("Upload failed. Status code:", response.status_code)
+        print("Response content:", response.text)
 # Example usage:
 # params = {
 #     'accountId': 'your_account_id',
@@ -169,7 +174,9 @@ def handle_image(event):
     # Retrieve the image content from Line server
     message_content = line_bot_api.get_message_content(image_id)
     image_data = message_content.content
+    print("image data: ")
     print(image_data)
+    basic_upload(image_data)
 
     with open(image_path, 'wb') as f:
         for chunk in message_content.iter_content():
