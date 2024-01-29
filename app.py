@@ -76,13 +76,16 @@ def dashboard():
 
 import requests
 import json
-def basic_upload(image_data):
+def basic_upload(image_data, query_string=None):
     url = "https://api.bytescale.com/v2/accounts/kW15btV/uploads/binary"
     headers = {
         "Authorization": "Bearer public_kW15btVG2Yc8588L6sRg4AERTU8J",
         "Content-Type": "image/jpeg"  # Update to match the file's MIME type
     }
 
+    if query_string:
+        url += "?" + "&".join([f"{key}={value}" for key, value in query_string.items()])
+    
     response = requests.post(url, headers=headers, data=image_data)
 
     # Check if the request was successful (status code 2xx)
@@ -176,7 +179,14 @@ def handle_image(event):
     image_data = message_content.content
     print("image data: ")
     print(image_data)
-    basic_upload(image_data)
+
+    query_string = {
+        "fileName" : f"{user_id}_{image_id}.jpg",
+        "filePath" : f"/uploads/face/{user_id}_{image_id}.jpg",
+        "folderPath" : "/uploads/face"
+    }
+
+    basic_upload(image_data, query_string=query_string)
 
     with open(image_path, 'wb') as f:
         for chunk in message_content.iter_content():
