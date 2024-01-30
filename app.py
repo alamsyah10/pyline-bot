@@ -85,7 +85,7 @@ def basic_upload(image_data, query_string=None):
 
     if query_string:
         url += "?" + "&".join([f"{key}={value}" for key, value in query_string.items()])
-    
+
     response = requests.post(url, headers=headers, data=image_data)
 
     # Check if the request was successful (status code 2xx)
@@ -169,6 +169,8 @@ def handle_image(event):
     """ Handle image messages """
     user_id = event.source.user_id
     image_id = event.message.id
+
+    # perform check in database is there already image with this user_id or not
 
     # You can save the image or perform further processing here
     # Example: Save the image with user_id and image_id as the filename
