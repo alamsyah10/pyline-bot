@@ -1,6 +1,5 @@
 import os
 from flask import Flask, render_template, request, abort, jsonify, send_file
-from deepface import DeepFace
 import time
 from PIL import Image
 from io import BytesIO
@@ -107,51 +106,51 @@ def basic_upload(image_data, query_string=None):
 # print(result)
 
 
-@app.route("/capture", methods=['POST'])
-def capture_image():
-    try:
-        start_time = time.time()
-        image_data = request.get_json().get("image_data")
-        image_binary = image_data.split(",")[1].encode("utf-8")
-        image_filename = f"captured_image_{int(time.time())}.jpg" 
+# @app.route("/capture", methods=['POST'])
+# def capture_image():
+#     try:
+#         start_time = time.time()
+#         image_data = request.get_json().get("image_data")
+#         image_binary = image_data.split(",")[1].encode("utf-8")
+#         image_filename = f"captured_image_{int(time.time())}.jpg" 
 
 
-        image_data_real = image_data.split(",")[1]
-        image_binary_real = base64.b64decode(image_data_real)
-        image = Image.open(BytesIO(image_binary_real))
-        image.save(os.path.join(captured_images_folder, image_filename), "JPEG", quality=95)  # Save as JPEG
+#         image_data_real = image_data.split(",")[1]
+#         image_binary_real = base64.b64decode(image_data_real)
+#         image = Image.open(BytesIO(image_binary_real))
+#         image.save(os.path.join(captured_images_folder, image_filename), "JPEG", quality=95)  # Save as JPEG
 
-        img1 = Image.open("static/captured_images/"+image_filename)
-        img1_np = np.array(img1)
+#         img1 = Image.open("static/captured_images/"+image_filename)
+#         img1_np = np.array(img1)
         
-        model_name = 'Facenet'
+#         model_name = 'Facenet'
 
-        folder_path = "static/database"
-        filenames = os.listdir(folder_path)
-        print(filenames)
-        for filename in filenames:
-            img2 = Image.open("static/database/"+filename)
-            img2_np = np.array(img2)
-            one_response_start_time = time.time()
-            response = DeepFace.verify(img1_path=img1_np, img2_path=img2_np, model_name=model_name)
-            print(f"1 face recognition time: {time.time() - one_response_start_time}")
-            print(response)
-            if (response['verified']) :
+#         folder_path = "static/database"
+#         filenames = os.listdir(folder_path)
+#         print(filenames)
+#         for filename in filenames:
+#             img2 = Image.open("static/database/"+filename)
+#             img2_np = np.array(img2)
+#             one_response_start_time = time.time()
+#             response = DeepFace.verify(img1_path=img1_np, img2_path=img2_np, model_name=model_name)
+#             print(f"1 face recognition time: {time.time() - one_response_start_time}")
+#             print(response)
+#             if (response['verified']) :
 
-                print(f"face recognition time : {time.time()-start_time}")
-                return jsonify({"status": "success", "image_filename": filename})
-        print(f"face recognition time : {time.time()-start_time}")
-        # response = DeepFace.verify(img1_path=img1_np, img2_path=img2_np, model_name = model_name)
+#                 print(f"face recognition time : {time.time()-start_time}")
+#                 return jsonify({"status": "success", "image_filename": filename})
+#         print(f"face recognition time : {time.time()-start_time}")
+#         # response = DeepFace.verify(img1_path=img1_np, img2_path=img2_np, model_name = model_name)
 
-        return jsonify({"status": "success", "image_filename": "NOT FOUND"})
+#         return jsonify({"status": "success", "image_filename": "NOT FOUND"})
         
 
 
-        # return jsonify({"status": "success", "image_filename": image_filename})
+#         # return jsonify({"status": "success", "image_filename": image_filename})
 
-    except Exception as e:
-        print("Error:", str(e))
-        return jsonify({"status": "error", "error": str(e)})
+#     except Exception as e:
+#         print("Error:", str(e))
+#         return jsonify({"status": "error", "error": str(e)})
 
 
 
@@ -159,10 +158,29 @@ def capture_image():
 def handle_message(event):
     """ Here's all the messages will be handled and processed by the program """
     print(event.source.user_id)
-    print()
-    line_bot_api.reply_message(
+
+    if (event.message.text.strip() == "/register info"):
+        reply_text = "/register data\n<name>\n<gender>\n<age>"
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=reply_text)
+        )
+        reply_text = "/register image"
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=reply_text)
+        )
+        reply_text = "<your uploaded image>"
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=reply_text)
+        )
+    else {
+        line_bot_api.reply_message(
         event.reply_token,
         TextSendMessage(text=event.message.text + " apa kabar"))
+    }
+    
 
 @handler.add(MessageEvent, message=ImageMessage)
 def handle_image(event):
@@ -179,23 +197,16 @@ def handle_image(event):
     # Retrieve the image content from Line server
     message_content = line_bot_api.get_message_content(image_id)
     image_data = message_content.content
-    print("image data: ")
-    print(image_data)
+    base64_encoded = base64.b64encode(image_data).decode('utf-8')
 
-    query_string = {
-        "fileName" : f"{user_id}_{image_id}.jpg",
-        "filePath" : f"/uploads/face/{user_id}_{image_id}.jpg",
-        "folderPath" : "/uploads/face"
-    }
+    # save_image_data(base64_encoded)
 
-    basic_upload(image_data, query_string=query_string)
-
-    with open(image_path, 'wb') as f:
-        for chunk in message_content.iter_content():
-            f.write(chunk)
+    # with open(image_path, 'wb') as f:
+    #     for chunk in message_content.iter_content():
+    #         f.write(chunk)
 
     # Respond to the user
-    response_message = f"Image received and saved as {image_path}"
+    response_message = f"Image received and saved as "
     line_bot_api.reply_message(event.reply_token, TextSendMessage(text=response_message))
 
 
