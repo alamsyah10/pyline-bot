@@ -15,7 +15,7 @@ from linebot.exceptions import (
     InvalidSignatureError
 )
 from linebot.models import (
-    MessageEvent, TextMessage, TextSendMessage, ImageMessage
+    MessageEvent, TextMessage, TextSendMessage, ImageMessage, FlexSendMessage
 )
 
 app = Flask(__name__)
@@ -160,25 +160,51 @@ def handle_message(event):
     print(event.source.user_id)
 
     if (event.message.text.strip() == "/register info"):
-        reply_text = "/register data\n<name>\n<gender>\n<age>"
+        flex_message = {
+            "type": "carousel",
+            "contents": [
+                {
+                    "type": "bubble",
+                    "body": {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {"type": "text", "text": "/register data", "wrap": True}
+                        ]
+                    }
+                },
+                {
+                    "type": "bubble",
+                    "body": {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {"type": "text", "text": "/register image", "wrap": True}
+                        ]
+                    }
+                },
+                {
+                    "type": "bubble",
+                    "body": {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {"type": "text", "text": "<your uploaded image>", "wrap": True}
+                        ]
+                    }
+                }
+            ]
+        }
+        
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text=reply_text)
-        )
-        reply_text = "/register image"
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text=reply_text)
-        )
-        reply_text = "<your uploaded image>"
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text=reply_text)
+            FlexSendMessage(alt_text="Registration Steps", contents=flex_message)
         )
     else:
         line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text=event.message.text + " apa kabar"))
+            event.reply_token,
+            TextSendMessage(text=event.message.text + " apa kabar")
+        )
     
     
 
